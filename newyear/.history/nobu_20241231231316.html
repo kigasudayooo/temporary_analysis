@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>お年玉ダイスゲーム</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Meiryo", sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+      }
+      .container {
+        text-align: center;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 95%;
+        width: 600px;
+      }
+      .mode-selector {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+      }
+      .mode-button {
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid #ff6b6b;
+        background-color: white;
+        color: #ff6b6b;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        width: 45%;
+        max-width: 200px;
+      }
+      .mode-button.active {
+        background-color: #ff6b6b;
+        color: white;
+      }
+      .roll-button {
+        font-size: 1.2rem;
+        padding: 12px 24px;
+        cursor: pointer;
+        background-color: #ff6b6b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s, background-color 0.2s;
+        font-weight: bold;
+      }
+      .roll-button:hover {
+        background-color: #ff5252;
+        transform: translateY(-2px);
+      }
+      .roll-button:active {
+        transform: translateY(0);
+      }
+      .dice-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 0.8rem;
+        margin: 1.5rem auto;
+        max-width: 400px;
+        padding: 0 1rem;
+      }
+      .dice {
+        width: 55px;
+        height: 55px;
+        background-color: white;
+        border: 3px solid #ff6b6b;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ff6b6b;
+        position: relative;
+        margin: 0 auto;
+      }
+      .dice.d6 {
+        border-color: #4caf50;
+        color: #4caf50;
+      }
+      .dice.d10 {
+        border-color: #2196f3;
+        color: #2196f3;
+      }
+      @keyframes rollDice {
+        0% {
+          transform: rotateX(0deg) rotateY(0deg);
+          opacity: 1;
+        }
+        50% {
+          transform: rotateX(180deg) rotateY(180deg);
+          opacity: 0.5;
+        }
+        100% {
+          transform: rotateX(360deg) rotateY(360deg);
+          opacity: 1;
+        }
+      }
+      .rolling {
+        animation: rollDice 0.8s ease-out;
+      }
+      .result {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: #fff9f9;
+        border-radius: 8px;
+      }
+      .result-label {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+      }
+      .result-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #ff6b6b;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .history {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 2px dashed #eee;
+      }
+      .history-title {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+      }
+      .history-list {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+        color: #888;
+      }
+      .history-item {
+        background-color: #f8f8f8;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+      }
+      .mode-description {
+        margin: 1rem 0;
+        padding: 1rem;
+        background-color: #f8f8f8;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #666;
+      }
+      #dice-area-simple {
+        display: none;
+      }
+      @media (max-width: 480px) {
+        .container {
+          padding: 1rem;
+        }
+        .dice {
+          width: 45px;
+          height: 45px;
+          font-size: 1.2rem;
+        }
+        .result-value {
+          font-size: 1.8rem;
+        }
+        .mode-button {
+          padding: 0.8rem;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎲 お年玉ダイスゲーム 🎲</h1>
+
+      <div class="mode-selector">
+        <button
+          class="mode-button active"
+          onclick="switchMode('normal')"
+          id="mode-normal"
+        >
+          10面ダイス<br />×10個
+        </button>
+        <button
+          class="mode-button"
+          onclick="switchMode('simple')"
+          id="mode-simple"
+        >
+          6面＆10面<br />ダイス
+        </button>
+      </div>
+
+      <div class="mode-description" id="mode-description">
+        10面ダイスを10個振って合計し、100倍した金額がお年玉になります。<br />
+        期待値: 5,500円
+      </div>
+
+      <button onclick="rollDice()" id="roll-button" class="roll-button">
+        ダイスを振る
+      </button>
+
+      <!-- 10面ダイス×10 モード -->
+      <div class="dice-container" id="dice-area-normal">
+        <div class="dice d10" id="dice1">1</div>
+        <div class="dice d10" id="dice2">1</div>
+        <div class="dice d10" id="dice3">1</div>
+        <div class="dice d10" id="dice4">1</div>
+        <div class="dice d10" id="dice5">1</div>
+        <div class="dice d10" id="dice6">1</div>
+        <div class="dice d10" id="dice7">1</div>
+        <div class="dice d10" id="dice8">1</div>
+        <div class="dice d10" id="dice9">1</div>
+        <div class="dice d10" id="dice10">1</div>
+      </div>
+
+      <!-- 6面&10面ダイス モード -->
+      <div class="dice-container" id="dice-area-simple">
+        <div class="dice d6" id="simple-d6">1</div>
+        <div class="dice d10" id="simple-d10">1</div>
+      </div>
+
+      <div class="result">
+        <div class="result-label" id="result-label">出た目の合計 × 100</div>
+        <div id="result-value" class="result-value">1,000円</div>
+      </div>
+
+      <div class="history">
+        <div class="history-title">過去の結果（最新3回）</div>
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+
+    <script>
+      let currentMode = "normal";
+      const history = [];
+      const maxHistory = 3;
+      let isRolling = false;
+
+      function switchMode(mode) {
+        if (isRolling) return;
+        currentMode = mode;
+
+        // ボタンの見た目を更新
+        document
+          .getElementById("mode-normal")
+          .classList.toggle("active", mode === "normal");
+        document
+          .getElementById("mode-simple")
+          .classList.toggle("active", mode === "simple");
+
+        // ダイスエリアの表示切り替え
+        document.getElementById("dice-area-normal").style.display =
+          mode === "normal" ? "grid" : "none";
+        document.getElementById("dice-area-simple").style.display =
+          mode === "simple" ? "grid" : "none";
+
+        // 説明文の更新
+        const description =
+          mode === "normal"
+            ? "10面ダイスを10個振って合計し、100倍した金額がお年玉になります。<br>期待値: 5,500円"
+            : "6面ダイスと10面ダイスを振って掛け合わせ、250倍した金額がお年玉になります。<br>期待値: 4,812円";
+        document.getElementById("mode-description").innerHTML = description;
+
+        // ラベルの更新
+        document.getElementById("result-label").textContent =
+          mode === "normal" ? "出た目の合計 × 100" : "出た目の積 × 250";
+
+        // 履歴をクリア
+        history.length = 0;
+        document.getElementById("history-list").innerHTML = "";
+
+        // 結果表示をリセット
+        document.getElementById("result-value").textContent = "0円";
+      }
+
+      function rollDice() {
+        if (isRolling) return;
+        isRolling = true;
+
+        const button = document.getElementById("roll-button");
+        button.disabled = true;
+        button.style.opacity = "0.7";
+
+        if (currentMode === "normal") {
+          rollNormalMode();
+        } else {
+          rollSimpleMode();
+        }
+      }
+
+      function rollNormalMode() {
+        const dices = document.querySelectorAll("#dice-area-normal .dice");
+        let results = [];
+
+        dices.forEach((dice) => {
+          dice.classList.add("rolling");
+          setTimeout(() => {
+            const result = Math.floor(Math.random() * 10) + 1;
+            dice.textContent = result;
+            results.push(result);
+            if (results.length === 10) {
+              const sum = results.reduce((a, b) => a + b, 0);
+              updateResult(sum * 100);
+              enableRollButton();
+            }
+          }, 800);
+
+          dice.addEventListener(
+            "animationend",
+            () => {
+              dice.classList.remove("rolling");
+            },
+            { once: true }
+          );
+        });
+      }
+
+      function rollSimpleMode() {
+        const d6 = document.getElementById("simple-d6");
+        const d10 = document.getElementById("simple-d10");
+
+        d6.classList.add("rolling");
+        d10.classList.add("rolling");
+
+        setTimeout(() => {
+          const d6Result = Math.floor(Math.random() * 6) + 1;
+          const d10Result = Math.floor(Math.random() * 10) + 1;
+
+          d6.textContent = d6Result;
+          d10.textContent = d10Result;
+
+          updateResult(d6Result * d10Result * 250);
+          enableRollButton();
+        }, 800);
+
+        d6.addEventListener(
+          "animationend",
+          () => {
+            d6.classList.remove("rolling");
+          },
+          { once: true }
+        );
+
+        d10.addEventListener(
+          "animationend",
+          () => {
+            d10.classList.remove("rolling");
+          },
+          { once: true }
+        );
+      }
+
+      function updateResult(amount) {
+        const resultElement = document.getElementById("result-value");
+        const formattedAmount = amount.toLocaleString() + "円";
+        resultElement.textContent = formattedAmount;
+
+        history.unshift(formattedAmount);
+        if (history.length > maxHistory) {
+          history.pop();
+        }
+
+        const historyList = document.getElementById("history-list");
+        historyList.innerHTML = history
+          .map((result) => `<div class="history-item">${result}</div>`)
+          .join("");
+      }
+
+      function enableRollButton() {
+        isRolling = false;
+        const button = document.getElementById("roll-button");
+        button.disabled = false;
+        button.style.opacity = "1";
+      }
+    </script>
+  </body>
+</html>

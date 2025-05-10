@@ -19,3 +19,6 @@ dependencies = [
     "statsmodels>=0.14.4",
     "ucimlrepo>=0.0.7",
 ]
+
+[tool.uv.workspace]
+members = ["home_price_sim"]
